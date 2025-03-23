@@ -397,24 +397,14 @@ def run_benchmark():
     score_result = {}
     for cfg in cfg_lst:
         learner = cfg["learner"](**cfg["param"])
-        mean_accumulated_rewards, mean_rewards_per_step, mean_regret_per_step = (
-            evaluate_learner(learner)
-        )
+        mean_accumulated_rewards, mean_rewards_per_step, mean_regret_per_step = evaluate_learner(learner)
         if score_result.get(cfg["label_name"]) is None:
             score_result[cfg["label_name"]] = {}
         score_result[cfg["label_name"]][learner.name] = {}
-        score_result[cfg["label_name"]][learner.name]["acc_mean_rewards"] = (
-            mean_accumulated_rewards
-        )
-        score_result[cfg["label_name"]][learner.name]["mean_rewards_per_step"] = (
-            mean_rewards_per_step
-        )
-        score_result[cfg["label_name"]][learner.name]["mean_regret_per_step"] = (
-            mean_regret_per_step
-        )
-        score_result[cfg["label_name"]][learner.name]["research_parameter"] = cfg.get(
-            "research_parameter"
-        )
+        score_result[cfg["label_name"]][learner.name]["acc_mean_rewards"] = mean_accumulated_rewards
+        score_result[cfg["label_name"]][learner.name]["mean_rewards_per_step"] = mean_rewards_per_step
+        score_result[cfg["label_name"]][learner.name]["mean_regret_per_step"] = mean_regret_per_step
+        score_result[cfg["label_name"]][learner.name]["research_parameter"] = cfg.get("research_parameter")
 
     return score_result
 
@@ -424,10 +414,7 @@ def plot_result(score_result: dict):
 
     for key, val in score_result.items():
         items = sorted(
-            [
-                (elem["research_parameter"]["value"], elem["mean_regret_per_step"])
-                for _, elem in val.items()
-            ],
+            [(elem["research_parameter"]["value"], elem["mean_regret_per_step"]) for _, elem in val.items()],
             key=lambda x: x[0],
         )
         print(items)

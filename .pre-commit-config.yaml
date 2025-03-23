@@ -6,7 +6,8 @@ repos:
     # Run the linter.
     - id: ruff
       types_or: [ python, pyi ]
-      args: [ --fix ]
+      args: [ --fix, --line-length=120 ]
     # Run the formatter.
     - id: ruff-format
       types_or: [ python, pyi ]
+      args: [ --line-length=120 ]
