@@ -7,9 +7,6 @@ from itertools import accumulate
 import random
 from typing import Protocol
 
-from functools import wraps
-
-
 
 class KArmedBandit(Protocol):
     @abstractmethod
@@ -47,7 +44,6 @@ class BanditProblem:
         self.learner: BanditLearner = learner
         self.learner.reset(self.bandit.arms(), self.time_steps)
 
-
     def run(self) -> list[float]:
         rewards = []
         # lst to calculate_regret, useful for non-stationary where we need to track best action per step
@@ -63,8 +59,10 @@ class BanditProblem:
             # Checking if stationary or not
             if not self.learner.is_stationary:
                 # adjusting values to be in range(0,1)
-                for key,values in self.bandit.potential_hits.items():
-                    new_value = self.bandit.potential_hits[key] + np.random.normal() / 10
+                for key, values in self.bandit.potential_hits.items():
+                    new_value = (
+                        self.bandit.potential_hits[key] + np.random.normal() / 10
+                    )
                     self.bandit.potential_hits[key] = np.clip(new_value, 0, 1)
         return rewards, max_val_per_step
 
@@ -126,9 +124,8 @@ class ExploreThenCommitLearner(BanditLearner):
         self.arms = arms
         self.Q = np.zeros((self.k, 1))
         self.N = np.zeros((self.k, 1))
-        self.total_exploration_steps = self.k *  self.m
-        self.step=0
-
+        self.total_exploration_steps = self.k * self.m
+        self.step = 0
 
     def pick_arm(self):
         if self.step <= self.total_exploration_steps:
@@ -138,12 +135,12 @@ class ExploreThenCommitLearner(BanditLearner):
             self.current_action = np.argmax(self.Q)
             return self.arms[self.current_action]
 
-
     def acknowledge_reward(self, arm: str, reward: float) -> None:
         self.N[self.current_action] += 1
-        self.Q[self.current_action] += (reward - self.Q[self.current_action]) / self.N[self.current_action]
+        self.Q[self.current_action] += (reward - self.Q[self.current_action]) / self.N[
+            self.current_action
+        ]
         self.step += 1
-
 
 
 class GreedyLearner(BanditLearner):
@@ -170,10 +167,10 @@ class GreedyLearner(BanditLearner):
         if self.step < len(self.arms):
             self.current_action = self.step
             return self.arms[self.current_action]
-        prob = np.random.uniform(0,1)
+        prob = np.random.uniform(0, 1)
 
         if prob <= self.eps:
-            self.current_action = random.randint(0,len(self.arms) - 1)
+            self.current_action = random.randint(0, len(self.arms) - 1)
             return self.arms[self.current_action]
         else:
             self.current_action = np.argmax(self.Q)
@@ -182,15 +179,20 @@ class GreedyLearner(BanditLearner):
     def acknowledge_reward(self, arm: str, reward: float) -> None:
         self.N[self.current_action] += 1
         if self.is_stationary:
-            self.Q[self.current_action] += (reward - self.Q[self.current_action]) / self.N[self.current_action]
+            self.Q[self.current_action] += (
+                reward - self.Q[self.current_action]
+            ) / self.N[self.current_action]
         else:
-            self.Q[self.current_action] += (reward - self.Q[self.current_action]) * self.learning_rate
+            self.Q[self.current_action] += (
+                reward - self.Q[self.current_action]
+            ) * self.learning_rate
 
-        self.step+=1
+        self.step += 1
+
 
 class UpperConfidenceBoundLearner(BanditLearner):
     def __init__(self, name, color, c):
-        self.name =  name
+        self.name = name
         self.color = color
         self.arms: list[str]
         self.Q = None
@@ -199,32 +201,35 @@ class UpperConfidenceBoundLearner(BanditLearner):
         self.step = 0
         self.current_action = None
 
-
     def reset(self, arms: list[str], time_steps: int):
         self.arms = arms
-        self.step=0
+        self.step = 0
         self.N = np.zeros((len(arms), 1))
         self.Q = np.zeros((len(arms), 1))
 
     def pick_arm(self) -> str:
-
         # exploration phase
         if self.step < len(self.arms):
             self.current_action = self.step
             return self.arms[self.current_action]
 
-        self.current_action = np.argmax(self.Q + self.c * np.sqrt(np.log(self.step) / self.N))
+        self.current_action = np.argmax(
+            self.Q + self.c * np.sqrt(np.log(self.step) / self.N)
+        )
 
         return self.arms[self.current_action]
 
     def acknowledge_reward(self, arm: str, reward: float) -> None:
-        self.step+=1
+        self.step += 1
         self.N[self.current_action] += 1
 
-        self.Q[self.current_action] += (reward - self.Q[self.current_action]) / self.N[self.current_action]
+        self.Q[self.current_action] += (reward - self.Q[self.current_action]) / self.N[
+            self.current_action
+        ]
+
 
 class GradientLearner(BanditLearner):
-    def __init__(self, name,alfa, color, use_baseline = True):
+    def __init__(self, name, alfa, color, use_baseline=True):
         self.name = name
         self.color = color
         self.arms: list[str] = []
@@ -246,7 +251,6 @@ class GradientLearner(BanditLearner):
         self.N = 0
         self.step = 0
 
-
     def pick_arm(self) -> str:
         # exploration phase
         if self.step < len(self.arms):
@@ -256,26 +260,37 @@ class GradientLearner(BanditLearner):
         prob_distribution = self.get_all_arms_probabilities().flatten()
         # Choosing based on current distribution
         self.current_action = np.random.choice(len(self.arms), p=prob_distribution)
-        self.current_action_negation = [elem for elem in range(len(self.arms)) if elem != self.current_action]
+        self.current_action_negation = [
+            elem for elem in range(len(self.arms)) if elem != self.current_action
+        ]
         return self.arms[self.current_action]
 
-    def acknowledge_reward(self, arm: str, reward:  float) -> None:
-        self.step+=1
-        self.H[self.current_action]+= self.alfa * (reward - self.Q) * (1 - self.softmax_probability())
-        self.H[self.current_action_negation]-= self.alfa * (reward - self.Q) * self.softmax_probability(is_current_action=False)
+    def acknowledge_reward(self, arm: str, reward: float) -> None:
+        self.step += 1
+        self.H[self.current_action] += (
+            self.alfa * (reward - self.Q) * (1 - self.softmax_probability())
+        )
+        self.H[self.current_action_negation] -= (
+            self.alfa
+            * (reward - self.Q)
+            * self.softmax_probability(is_current_action=False)
+        )
 
-        self.N+= 1
+        self.N += 1
         if self.use_baseline:
-            self.Q+= (reward - self.Q) / self.N
+            self.Q += (reward - self.Q) / self.N
 
     def softmax_probability(self, is_current_action=True):
         if is_current_action:
             return (np.exp(self.H[self.current_action])) / (np.sum(np.exp(self.H)))
         else:
-            return (np.exp(self.H[self.current_action_negation])) / (np.sum(np.exp(self.H)))
+            return (np.exp(self.H[self.current_action_negation])) / (
+                np.sum(np.exp(self.H))
+            )
 
     def get_all_arms_probabilities(self):
         return np.exp(self.H) / np.sum(np.exp(self.H))
+
 
 class ThompsonSampling(BanditLearner):
     def __init__(self):
@@ -294,12 +309,14 @@ class ThompsonSampling(BanditLearner):
         self.step = 0
 
     def pick_arm(self) -> str:
-
         if self.step < len(self.arms):
             self.current_action = self.step
             return self.arms[self.current_action]
 
-        samples = [np.random.beta(self.alfa[elem], self.beta[elem]) for elem in range(len(self.arms))]
+        samples = [
+            np.random.beta(self.alfa[elem], self.beta[elem])
+            for elem in range(len(self.arms))
+        ]
         self.current_action = np.argmax(samples)
 
         return self.arms[self.current_action]
@@ -308,8 +325,6 @@ class ThompsonSampling(BanditLearner):
         self.step += 1
         self.alfa[self.current_action] += reward
         self.beta[self.current_action] += 1 - reward
-
-
 
 
 TIME_STEPS = 1000
@@ -338,14 +353,20 @@ def evaluate_learner(learner: BanditLearner) -> None:
     )
 
 
-
 def main():
-    learners = [ThompsonSampling(), ExploreThenCommitLearner(m=5, color="violet"), ExploreThenCommitLearner(m=10, color="red"), ExploreThenCommitLearner(m=20, color="green"), ExploreThenCommitLearner(m=50, color="yellow"),RandomLearner()]
+    learners = [
+        ThompsonSampling(),
+        ExploreThenCommitLearner(m=5, color="violet"),
+        ExploreThenCommitLearner(m=10, color="red"),
+        ExploreThenCommitLearner(m=20, color="green"),
+        ExploreThenCommitLearner(m=50, color="yellow"),
+        RandomLearner(),
+    ]
     for learner in learners:
         evaluate_learner(learner)
 
-    plt.xlabel('Time')
-    plt.ylabel('Sum of the rewards')
+    plt.xlabel("Time")
+    plt.ylabel("Sum of the rewards")
     plt.title("Sum of the rewards in time")
     plt.ylim(0, TIME_STEPS)
     plt.grid()
@@ -353,5 +374,5 @@ def main():
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
