@@ -174,4 +174,7 @@ cython_debug/
 .pypirc
 
 .DS_Store
-*.pdf
+
+corner_b/
+corner_d/
+corner_c/
