@@ -1,0 +1,18 @@
+{
+    "timestamp": "2025-05-04T06:25:31.960786",
+    "player_A_params": {
+        "epsilon": 0.5,
+        "time_limit": 0.2,
+        "policy": "epsilon_greedy"
+    },
+    "player_B_params": {
+        "epsilon": 0.05,
+        "time_limit": 0.2,
+        "policy": "epsilon_greedy"
+    },
+    "player_a": 240,
+    "player_b": 260,
+    "total_games": 500,
+    "player_a_win_rate": 0.48,
+    "player_b_win_rate": 0.52
+}
