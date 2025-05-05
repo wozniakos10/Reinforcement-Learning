@@ -61,11 +61,11 @@ class OffPolicyNStepSarsaDriver(Driver):
             self.rewards[self._access_index(self.current_step + 1)] = last_reward
             self.states[self._access_index(self.current_step + 1)] = state
             if self.final_step == ALMOST_INFINITE_STEP and (
-                    last_reward == 0 or self.current_step == MAX_LEARNING_STEPS
+                last_reward == 0 or self.current_step == MAX_LEARNING_STEPS
             ):
                 self.final_step = self.current_step
 
-            action = self._select_action(self.epsilon_greedy_policy(state,  available_actions(state)))
+            action = self._select_action(self.epsilon_greedy_policy(state, available_actions(state)))
 
             self.actions[self._access_index(self.current_step + 1)] = action
         else:
@@ -77,7 +77,9 @@ class OffPolicyNStepSarsaDriver(Driver):
             return_value = self._return_value(update_step)
             state_t = self.states[self._access_index(update_step)]
             action_t = self.actions[self._access_index(update_step)]
-            self.q[state_t, action_t] += self.step_size * return_value_weight * (return_value - self.q[state_t, action_t]) # TODO: Tutaj trzeba zaktualizować tablicę wartościującą akcje Q
+            self.q[state_t, action_t] += (
+                self.step_size * return_value_weight * (return_value - self.q[state_t, action_t])
+            )  # TODO: Tutaj trzeba zaktualizować tablicę wartościującą akcje Q
 
         if update_step == self.final_step - 1:
             self.finished = True
@@ -87,7 +89,7 @@ class OffPolicyNStepSarsaDriver(Driver):
 
     def _return_value(self, update_step):
         return_value = 0.0
-        for i in range(update_step + 1, min(update_step + self.step_no + 1 , self.final_step + 1)):
+        for i in range(update_step + 1, min(update_step + self.step_no + 1, self.final_step + 1)):
             return_value += self.discount_factor ** (i - update_step - 1) * self.rewards[self._access_index(i)]
         if update_step + self.step_no < self.final_step:
             state = self.states[self._access_index(update_step + self.step_no)]
@@ -108,7 +110,7 @@ class OffPolicyNStepSarsaDriver(Driver):
 
             # b policy.
             b_policy_value = 1 - self.experiment_rate if action == greedy_action else 0
-            #adding probability to draw particular action
+            # adding probability to draw particular action
             b_policy_value += self.experiment_rate / len(available_actions(state))
 
             ratio = pi_policy_value / b_policy_value
@@ -171,14 +173,14 @@ class OffPolicyNStepSarsaDriver(Driver):
     @staticmethod
     def _random_probabilities(actions: list[Action]) -> np.ndarray:
         maximal_spots = np.array([1.0 for _ in actions])
-        normalized =  OffPolicyNStepSarsaDriver._normalise(maximal_spots)
+        normalized = OffPolicyNStepSarsaDriver._normalise(maximal_spots)
         if 0 <= sum(normalized) < 0.1:
             print(f"probability do not sum to 1 in random!: {normalized}")
         return normalized
 
     @staticmethod
     def _normalise(probabilities: np.ndarray) -> np.ndarray:
-        return skl_preprocessing.normalize(probabilities.reshape(1, -1), norm='l1')[0]
+        return skl_preprocessing.normalize(probabilities.reshape(1, -1), norm="l1")[0]
 
 
 def main() -> None:
@@ -195,9 +197,7 @@ def main() -> None:
 
     experiment = Experiment(
         environment=Environment(
-            corner=Corner(
-                name='corner_d'
-            ),
+            corner=Corner(name="corner_d"),
             steering_fail_chance=0.01,
         ),
         driver=OffPolicyNStepSarsaDriver(
@@ -212,5 +212,5 @@ def main() -> None:
     experiment.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

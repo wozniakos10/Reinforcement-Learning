@@ -7,7 +7,6 @@ from typing import NamedTuple, Optional, Protocol
 
 import matplotlib.image as mpl_image
 import numpy as np
-from numpy.distutils.fcompiler import environment
 from tqdm import tqdm
 
 import utils
@@ -40,17 +39,19 @@ class State(NamedTuple):
 
 def available_actions(state: State) -> list[Action]:
     return [
-        action for action in Car.POTENTIAL_ACTIONS if (
-                MIN_VX <= state.v_x + action.a_x <= MAX_VX and
-                MIN_VY <= state.v_y + action.a_y <= MAX_VY and
-                (state.v_x + action.a_x != 0 or state.v_y + action.a_y != 0)
+        action
+        for action in Car.POTENTIAL_ACTIONS
+        if (
+            MIN_VX <= state.v_x + action.a_x <= MAX_VX
+            and MIN_VY <= state.v_y + action.a_y <= MAX_VY
+            and (state.v_x + action.a_x != 0 or state.v_y + action.a_y != 0)
         )
     ]
 
 
 class Corner:
     def __init__(self, name: str) -> None:
-        self.image: np.ndarray = mpl_image.imread(f'corners/{name}.png')
+        self.image: np.ndarray = mpl_image.imread(f"corners/{name}.png")
         self.track: np.ndarray = np.flip(self.image[:, :, 0] + self.image[:, :, 1], 0)
         self.track[self.track == 2.0] = 1.0
         self.starting_positions: set[Position] = self._determine_positions(
@@ -63,15 +64,15 @@ class Corner:
         self.name = name
 
     def contains(self, position: Position) -> bool:
-        return (0 < position.x < self.track.shape[0] and
-                0 < position.y < self.track.shape[1] and
-                self.track[position] == 1.0)
+        return (
+            0 < position.x < self.track.shape[0]
+            and 0 < position.y < self.track.shape[1]
+            and self.track[position] == 1.0
+        )
 
     @staticmethod
     def _determine_positions(image: np.ndarray) -> set[Position]:
-        return set(
-            Position(x, y) for (x, y), value in np.ndenumerate(image) if value == 1.0
-        )
+        return set(Position(x, y) for (x, y), value in np.ndenumerate(image) if value == 1.0)
 
 
 class Car:
@@ -163,9 +164,8 @@ class Experiment:
             self.penalties.append(episode_penalty)
             self.current_episode_no += 1
 
-
-        print("*"*50)
-        print(f"Entering validation mode")
+        print("*" * 50)
+        print("Entering validation mode")
         print("*" * 50)
         for val_episode_number in tqdm(range(self.number_of_validation_episodes)):
             self._validation_episode(val_episode_number)
@@ -201,4 +201,6 @@ class Experiment:
             utils.draw_penalties_plot(self.penalties, AVERAGING_WINDOW_SIZE, self.current_episode_no, corner_name)
 
     def _draw_validation_episode(self, positions: list[Position], corner_name: str, val_episode_number) -> None:
-        utils.draw_episode(self.environment.corner.image, positions, val_episode_number, corner_name, is_validation=True)
+        utils.draw_episode(
+            self.environment.corner.image, positions, val_episode_number, corner_name, is_validation=True
+        )
