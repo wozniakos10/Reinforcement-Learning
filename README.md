@@ -9,3 +9,5 @@ This repository contains a set of reinforcement learning  projects developed dur
 ### `lab_2` – *n-Step SARSA Off-Policy for Vehicle Cornering*
 
 ### `lab_3` – *Monte Carlo Tree Search in the Isolation Game*
+
+### `lab_4` - *Actor-Critic algorithm used in CartPole and LunarLander problems in gymnasium*
