@@ -12,16 +12,17 @@ from logger import configure_logger
 
 # -------------- PARAMETERS SETTING -------------------
 torch.manual_seed(0)
-N = 4000
-PROBLEM: Literal["CartPole-v1", "LunarLander-v3"] = "LunarLander-v3"
+N = 5000
 IS_COMMON = False
-IS_TRUNCATED = False
+IS_TRUNCATED = True
 H1_SIZE = 1024
 H2_SIZE = 256
 LR = 0.00001
 DISCOUNT_FACTOR = 0.99
 SAVE_PREFIX = "landing/detached_actor_critic_1024_256_lr_00001"
 logger_instance = configure_logger(f"{SAVE_PREFIX}/learning_logger.log")
+PROBLEM: Literal["CartPole-v1", "LunarLander-v3"] = "LunarLander-v3"
+
 # -------------- PARAMETERS SETTING -------------------
 
 
@@ -61,13 +62,13 @@ class ActorCriticController:
         self.actor_model: nn.Module = self.create_model(
             Actor,
             (self.state_shape[0], H1_SIZE, H2_SIZE, self.action_size),
-            is_evaluation=is_evaluation, path = f"{SAVE_PREFIX}/actor_episode_1200_model.pt"
+            is_evaluation=is_evaluation, path = f"{SAVE_PREFIX}/actor_final_model.pt"
         ).to(device)
 
         self.critic_model: nn.Module = self.create_model(
             Critic,
             (self.state_shape[0], H1_SIZE, H2_SIZE),
-            is_evaluation=is_evaluation, path = f"{SAVE_PREFIX}/critic_episode_1200_model.pt"
+            is_evaluation=is_evaluation, path = f"{SAVE_PREFIX}/critic_final_model.pt"
         ).to(device)
 
         self.common_optimizer: Optional[torch.optim.Optimizer] = optim.Adam(
@@ -333,23 +334,23 @@ def test_state_valuating() -> None:
         v = controller.value_state(pool_start_fast_downfall)
         print(f"Wartosciowanie stanu dla kijka zaczynajacego spadac: {v}")
 
-        trolley_close_to_border = np.array([4.3, 10, 0, 0])
+        trolley_close_to_border = np.array([4.3, 0, 0, 0])
         v = controller.value_state(trolley_close_to_border)
         print(f"Wartosciowanie stanu dla kijka blisko krawedzi: {v}")
     else:
-        close_to_landing_state = np.array([0.5, 0.01, 0, -0.5,0,0,0,0])
+        close_to_landing_state = np.array([0, 0.01, 0,-0.5,0,0,0,0])
         v = controller.value_state(close_to_landing_state)
         print(f"Wartosciowanie stanu dla chwile przed ladowaniem: {v}")
 
 
-        turn_to_left_state = np.array([2, 2, 0, 0.5, -6, 0, 0, 0])
+        turn_to_left_state = np.array([0, 0, 0, 0.5, -6, 0, 0, 0])
         v = controller.value_state(turn_to_left_state)
         print(f"Wartosciowanie stanu dla mocno przechylonegow lewo: {v}")
 
         action = controller.choose_action(turn_to_left_state)
         print(f"Proponowana akcja dla statku mocno przechylonego w lewo: {action}")
 
-        turn_to_right_state = np.array([2, 2, 0, 0.5, 6, 0, 0, 0])
+        turn_to_right_state = np.array([0, 0, 0, 0.5, 6, 0, 0, 0])
         v = controller.value_state(turn_to_right_state)
         print(f"Wartosciowanie stanu dla mocno przechylonego w prawo: {v}")
 
