@@ -181,3 +181,6 @@ corner_c/
 
 landing/
 cart_pole/
+logs/
+models/
+data/
