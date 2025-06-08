@@ -13,3 +13,5 @@ This repository contains a set of reinforcement learning  projects developed dur
 ### `lab_4` - *Actor-Critic algorithm used in CartPole and LunarLander problems in gymnasium*
 
 ### `lab_5` -*RLVR with GRPO used for change gpt2 behaviour*
+
+### `lab_7` - *Decision Transformer Trained on SAC LunarLander Demonstrations*
