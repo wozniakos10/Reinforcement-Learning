@@ -54,7 +54,7 @@ def evaluate(path_to_model: str, n_episodes: int, path_to_save: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate NanoDT agent on LunarLanderContinuous")
     parser.add_argument("--path_to_model", type=str, required=True, help="Path to the trained NanoDT model")
-    parser.add_argument("--n_episodes", type=int, default=100, help="Number of evaluation episodes")
+    parser.add_argument("--n_episodes", type=int, default=1000, help="Number of evaluation episodes")
     parser.add_argument("--path_to_save", type=str, required=True, help="Path to the saved model")
 
 

@@ -1,19 +1,28 @@
 import argparse
 import gymnasium as gym
-from stable_baselines3 import SAC
+from stable_baselines3 import SAC, PPO, DDPG
 from stable_baselines3.common.evaluation import evaluate_policy
 import numpy as np
 import json
 
-def main(path_to_model: str, path_to_save: str):
+def main(path_to_model: str, path_to_save: str, n_episodes: int, algo: str):
     # Create environment
     env = gym.make("LunarLander-v3", continuous=True, render_mode="rgb_array")
 
-    # Load the trained model
-    model = SAC.load(path_to_model, env=env)
+    if algo == "SAC":
+        # Load the trained model
+        model = SAC.load(path_to_model, env=env)
+
+    elif algo == "PPO":
+        model = PPO.load(path_to_model, env=env)
+
+    elif algo == "DDPG":
+        model = DDPG.load(path_to_model, env=env)
+
+
 
     # Evaluate the agent
-    rewards, episodes_length = evaluate_policy(model, model.get_env(), n_eval_episodes=1000, return_episode_rewards=True)
+    rewards, episodes_length = evaluate_policy(model, model.get_env(), n_eval_episodes=n_episodes, return_episode_rewards=True)
     mean = np.mean(rewards)
     std = np.std(rewards)
     max_reward = np.max(rewards)
@@ -49,6 +58,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate a trained SAC agent on LunarLanderContinuous")
     parser.add_argument("--path_to_model", type=str, required=True, help="Path to the trained model")
     parser.add_argument("--path_to_save", type=str, required=True, help="Path to the saved model")
+    parser.add_argument("--n_episodes", type=int, default=1000, help="Number of evaluation episodes")
+    parser.add_argument("--algo", type=str, default="SAC", choices=["SAC", "DDPG", "PPO"])
 
     args = parser.parse_args()
-    main(args.path_to_model, args.path_to_save)
+    main(args.path_to_model, args.path_to_save, args.n_episodes, args.algo)

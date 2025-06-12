@@ -213,21 +213,18 @@ class HerReplayBuffer(DictReplayBuffer):
 
         # Create HER transitions
         for obs, action, next_obs, info in self.episode_data:
-            # Modify goals - create new dict copies
-            obs_her = {k: v.copy() for k, v in obs.items()}
-            next_obs_her = {k: v.copy() for k, v in next_obs.items()}
 
-            obs_her["desired_goal"] = hindsight_goal.copy()
-            next_obs_her["desired_goal"] = hindsight_goal.copy()
+            obs["desired_goal"] = hindsight_goal.copy()
+            next_obs["desired_goal"] = hindsight_goal.copy()
 
             # Compute new reward and termination based on distance
-            achieved = next_obs_her["achieved_goal"]
+            achieved = next_obs["achieved_goal"]
             distance = np.linalg.norm(achieved - hindsight_goal)
             new_reward = -1.0 if distance > 1e-3 else 0.0  # sparse reward: 0 if close, -1 otherwise
             her_terminated = distance < 1e-3
 
             # Store HER transition
-            super().store(obs_her, action, float(new_reward), next_obs_her,
+            super().store(obs, action, float(new_reward), next_obs,
                           her_terminated, False, info)
 
 

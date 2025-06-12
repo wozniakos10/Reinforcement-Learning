@@ -2,16 +2,24 @@ from argparse import ArgumentParser
 
 import gymnasium as gym
 import torch
-from stable_baselines3 import DQN, SAC
+from stable_baselines3 import DDPG, PPO, SAC
 from tqdm.auto import tqdm
 
 from minari import DataCollector
 
 
-def collect_dataset(env_name: str, expert_path: str, n_timesteps: int, seed: int):
+def collect_dataset(env_name: str, expert_path: str, n_timesteps: int, seed: int, algo):
     torch.manual_seed(seed)
     env = DataCollector(gym.make(env_name, continuous=True))
-    agent = SAC.load(expert_path, env=env)
+    if algo == "SAC":
+        # Load the trained model
+        agent = SAC.load(expert_path, env=env)
+
+    elif algo == "PPO":
+        agent = PPO.load(expert_path, env=env)
+
+    elif algo == "DDPG":
+        agent = DDPG.load(expert_path, env=env)
 
     done = True
 
@@ -25,7 +33,7 @@ def collect_dataset(env_name: str, expert_path: str, n_timesteps: int, seed: int
         done = ter or tru
 
     dataset = env.create_dataset(
-        dataset_id=f"{env_name}-sac-5e5-v0",
+        dataset_id=f"{env_name}-ppo-2e6-v0",
         algorithm_name="ExpertPolicy",
         # code_permalink="https://minari.farama.org/tutorials/behavioral_cloning",
         author="Dawid Wozniak",
@@ -41,6 +49,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--n-timesteps", type=int, default=1_000_000)
     parser.add_argument("--seed", type=int, default=1337)
+    parser.add_argument("--algo", type=str, default="SAC", choices=["SAC", "DDPG", "PPO"])
 
     args = parser.parse_args()
 
@@ -49,4 +58,4 @@ if __name__ == "__main__":
         expert_path=args.expert_path,
         n_timesteps=args.n_timesteps,
         seed=args.seed,
-    )
+        algo = args.algo)
