@@ -133,6 +133,7 @@ class SAC:
         # TODO: fill this in
         # Additional properties for automatic alpha adjustment...
 
+
         # Create actor-critic module and target networks
         self.policy = policy
         self.policy_targ = deepcopy(self.policy)
@@ -194,9 +195,14 @@ class SAC:
             # TODO: fill this in
             # self.alpha = ...
             # self.alpha_optimizer = ...
+            self.alpha = torch.tensor(init_value)
+            self.log_alpha = torch.tensor(torch.log(torch.tensor(init_value)), requires_grad=True)
+            self.alpha_optimizer = Adam([self.log_alpha], lr=lr)
         else:
             # Force conversion to float
             # this will throw an error if a malformed string (different from 'auto') is passed
+            self.alpha_optimizer = None
+            self.log_alpha = None
             self.alpha = torch.tensor(
                 float(self.alpha), dtype=torch.float32, device=alpha_device
             )
@@ -259,9 +265,11 @@ class SAC:
         # so we don't change it with other losses
         # see https://github.com/rail-berkeley/softlearning/issues/60
         # TODO: fill this in
-        alpha_loss = 0
-        alpha = 0
-        return alpha_loss, alpha
+        log_prob = logp_pi.detach() + self.target_entropy
+        alpha_loss = -(self.log_alpha * log_prob).mean()
+
+        self.alpha = self.log_alpha.detach().exp()
+        return alpha_loss, self.alpha
         # Remember to use target_entropy
 
     def update(self, data) -> dict[str, float]:
@@ -301,8 +309,10 @@ class SAC:
         # entropy temperature or alpha in the paper
         if self.alpha_optimizer is not None:
             alpha_loss, alpha = self.compute_loss_alpha(logp_pi)
-            # TODO: fill this in
-            # Update alpha...
+
+            self.alpha_optimizer.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optimizer.step()
         else:
             alpha_loss = np.array(0)
 
@@ -346,6 +356,7 @@ class SAC:
 
                 if store_experience:
                     # Store experience to replay buffer
+
                     self.buffer.store(o, a, r, o2, ter, tru, i)
 
                 o = o2
@@ -463,7 +474,7 @@ class SAC:
                 "pi_optimizer_state_dict": self.pi_optimizer.state_dict(),
                 "q_optimizer_state_dict": self.q_optimizer.state_dict(),
                 # TODO: fill this in
-                # "alpha_optimizer_state_dict": ...,
+                "alpha_optimizer_state_dict": self.alpha_optimizer.state_dict(),
             },
             path,
         )
@@ -475,4 +486,4 @@ class SAC:
         self.q_optimizer.load_state_dict(checkpoint["q_optimizer_state_dict"])
         self.alpha = checkpoint["alpha"]
         # TODO: fill this in
-        # self.alpha_optimizer = ...
+        self.alpha_optimizer = checkpoint["alpha_optimizer_state_dict"]

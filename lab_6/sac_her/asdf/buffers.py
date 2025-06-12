@@ -123,6 +123,8 @@ class DictReplayBuffer(BaseBuffer):
         observation: dict[str, NDArray],
         next_observation: dict[str, NDArray],
     ) -> None:
+
+
         for k in observation.keys():
             self.observations[k][self._ptr] = torch.as_tensor(
                 observation[k], dtype=torch.float32
@@ -155,10 +157,12 @@ class HerReplayBuffer(DictReplayBuffer):
         self.n_sampled_goal = n_sampled_goal
         self.selection_strategy = goal_selection_strategy
         # TODO: fill this in
+        self.episode_data = []
         # You can put additional attributes here if needed.
         # Also: There is a number of methods in the base class that could be useful to override.
 
    
+
     def store(
         self,
         observation: dict[str, torch.Tensor],
@@ -184,11 +188,47 @@ class HerReplayBuffer(DictReplayBuffer):
         )
 
         # TODO: fill this in
-        # Or maybe here?
+        # Accumulate episode data
+        # Deep copy dict contents since they contain numpy arrays
+        obs_copy = {k: v.copy() for k, v in observation.items()}
+        next_obs_copy = {k: v.copy() for k, v in next_observation.items()}
+        self.episode_data.append((obs_copy, action.copy(), next_obs_copy, info))
 
+        # Generate HER transitions when episode ends
+        if terminated or truncated:
+            self._generate_her_transitions()
+            self.episode_data = []
 
+    def _generate_her_transitions(self):
+        """Generate and store HER transitions for the completed episode."""
+        if not self.episode_data:
+            return
 
+        # Get hindsight goals
+        if self.selection_strategy == "final":
+            hindsight_goal = self.episode_data[-1][2]["achieved_goal"]  # final achieved_goal
+        else:  # "episode" or "future" - sample random
+            random_idx = np.random.randint(0, len(self.episode_data))
+            hindsight_goal = self.episode_data[random_idx][2]["achieved_goal"]
 
+        # Create HER transitions
+        for obs, action, next_obs, info in self.episode_data:
+            # Modify goals - create new dict copies
+            obs_her = {k: v.copy() for k, v in obs.items()}
+            next_obs_her = {k: v.copy() for k, v in next_obs.items()}
+
+            obs_her["desired_goal"] = hindsight_goal.copy()
+            next_obs_her["desired_goal"] = hindsight_goal.copy()
+
+            # Compute new reward and termination based on distance
+            achieved = next_obs_her["achieved_goal"]
+            distance = np.linalg.norm(achieved - hindsight_goal)
+            new_reward = -1.0 if distance > 1e-3 else 0.0  # sparse reward: 0 if close, -1 otherwise
+            her_terminated = distance < 1e-3
+
+            # Store HER transition
+            super().store(obs_her, action, float(new_reward), next_obs_her,
+                          her_terminated, False, info)
 
 
 
